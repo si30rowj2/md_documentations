@@ -1,0 +1,18 @@
+% 日本語の行内改行を有効化 (xeCJK 不要・XeTeX 標準機能)
+\XeTeXlinebreaklocale "ja"
+\XeTeXlinebreakskip=0pt plus 1pt minus 0.1pt
+
+% 章(H1=section)ごとに改ページ
+\usepackage{etoolbox}
+\pretocmd{\section}{\clearpage}{}{}
+
+% 採番形式を 1, 1-1, 1-1-1 に (wiki.js 側の表示と統一)
+\renewcommand{\thesubsection}{\thesection-\arabic{subsection}}
+\renewcommand{\thesubsubsection}{\thesection-\arabic{subsection}-\arabic{subsubsection}}
+
+% 小項目(H3)まで採番・目次掲載
+\setcounter{secnumdepth}{3}
+\setcounter{tocdepth}{3}
+
+% 目次タイトル
+\renewcommand{\contentsname}{目次}
