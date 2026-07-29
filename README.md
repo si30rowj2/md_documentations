@@ -1,6 +1,6 @@
-# ソフトウェア仕様書 (md → wiki.js / PDF 両対応・自動採番)
+# ソフトウェア仕様書 (md → wiki.js / MkDocs / PDF 対応・自動採番)
 
-複数の md ファイルから、wiki.js のページ群と 1 つの PDF の両方を生成する構成のサンプル。
+複数の md ファイルから、wiki.js のページ群・MkDocs の静的サイト・1 つの PDF を生成する構成のサンプル。
 **md 内の見出しには章番号を書かない**。番号はプレビュー/変換時に自動採番されるため、
 章の挿入・入れ替え時に本文の修正は不要。
 
@@ -9,14 +9,21 @@
 ```
 docs/*.md (見出しに番号なし・ファイル名の数字プレフィックスで順序管理)
    ├─→ wiki.js ...... CSSカウンタ + パスの数字から章番号を注入するJS で自動採番
+   ├─→ MkDocs ....... 同方式(Material テーマ)。ナビはファイル名順で自動生成
    └─→ PDF .......... Pandoc --number-sections で自動採番・目次(ページ番号付き)自動生成
 ```
+
+同じ `docs/*.md` を 3 系統へ変換する。wiki.js と MkDocs は「章番号を書かず、CSS カウンタと
+パスの数字プレフィックスから採番する」という完全に同じ思想なので、本文は 1 つも分岐しない。
 
 ## フォルダ構成
 
 | パス | 内容 |
 |------|------|
 | `docs/` | 仕様書本体。1ファイル=1章。`01_overview.md` の数字が章番号=表示順 |
+| `docs/assets/numbering.css` / `numbering.js` | MkDocs 用の採番CSS/JS(wikijs 版の移植。mkdocs.yml から読み込む) |
+| `mkdocs.yml` | MkDocs (Material テーマ) 設定。`docs/` を入力にする |
+| `requirements.txt` | MkDocs のインストール用 (`pip install -r requirements.txt`) |
 | `wikijs/custom-css.css` | wiki.js 管理画面「テーマ → CSSオーバーライド」に貼る採番CSS |
 | `wikijs/head-injection.html` | 同「HTMLヘッド注入」に貼る章番号注入スクリプト |
 | `build/build.ps1` / `build.sh` | PDF ビルドスクリプト (Windows / Linux) |
@@ -73,6 +80,29 @@ md を Git リポジトリで管理し、wiki.js に自動同期させる。
 
 wiki.js の API (`/graphql`, `pages.create` ミューテーション) をスクリプトから叩いて一括登録できる。
 管理画面 → API でキーを発行して使用する。
+
+## MkDocs での作り方
+
+`docs/*.md` を Material テーマの静的サイトに変換する。wiki.js と同じく
+**md は無修正**。章番号は `docs/assets/numbering.css` と `numbering.js` が
+ページパスの数字プレフィックスから自動注入する。
+
+```bash
+pip install -r requirements.txt   # 初回のみ (mkdocs-material を導入)
+
+mkdocs serve    # http://127.0.0.1:8000 でライブプレビュー
+mkdocs build    # site/ に静的サイトを生成 (site/ は .gitignore 済み)
+```
+
+- **ナビゲーション**は `mkdocs.yml` に書かず自動生成させている。`docs/*.md` が
+  ファイル名順(`01_ < 02_ < 03_`)に並ぶため、`tools/renumber.ps1` で番号を
+  振り直せばナビ順も自動で追従する(ナビ定義の手修正は不要)。
+- 各 md 先頭の front matter (`title:`) がページタイトル・ナビ名になる。
+  wiki.js 専用の `published:` 等の未知キーは MkDocs 側では無視される。
+- 採番形式(1, 1-1, 1-1-1)を変えたい場合は `docs/assets/numbering.css` を編集する。
+- `mkdocs gh-deploy` で GitHub Pages へ直接公開もできる。
+- ※ wiki.js のサイドバー同様、MkDocs 左ナビの見出しには番号は付かない
+  (見出しテキスト自体に番号を持たせていないため)。本文の H1/H2/H3 には付く。
 
 ## PDF の作り方
 

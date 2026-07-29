@@ -1,0 +1,4 @@
+# MkDocs で docs/*.md を静的サイト化するための依存
+# インストール:  pip install -r requirements.txt
+# pymdown-extensions は mkdocs-material の依存として自動で入る
+mkdocs-material>=9.5

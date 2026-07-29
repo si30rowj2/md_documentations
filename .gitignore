@@ -1,0 +1,6 @@
+# MkDocs のビルド生成物
+/site/
+
+# Python 仮想環境 (任意)
+.venv/
+__pycache__/

@@ -1,0 +1,44 @@
+/* ============================================================
+ * MkDocs (Material) 見出し自動採番CSS
+ * mkdocs.yml の extra_css から読み込まれる。
+ *
+ * wiki.js の wikijs/custom-css.css と同じ思想:
+ *  - 1ページ = 1章。ページ内の H1 が章タイトル
+ *  - 章番号はページパスの数字プレフィックス (01_overview 等) から
+ *    numbering.js が counter-reset で注入する
+ *  - 採番形式: 章 = "1."、中項目 = "1-1."、小項目 = "1-1-1."
+ *
+ * Material の本文コンテナは article.md-content__inner.md-typeset。
+ * .numbered クラスは numbering.js が章番号を特定できたページにのみ付与する
+ * (数字プレフィックスのないページ=番号なし)。
+ * ============================================================ */
+
+/* 章番号の起点 (スクリプト未適用時のフォールバック) */
+.md-typeset.numbered {
+  counter-reset: chapter 0 sec2 0;
+}
+
+/* H1 = 章タイトル (1.) */
+.md-typeset.numbered h1 {
+  counter-reset: sec2;
+}
+.md-typeset.numbered h1::before {
+  content: counter(chapter) ". ";
+}
+
+/* H2 = 中項目 (1-1.) */
+.md-typeset.numbered h2 {
+  counter-increment: sec2;
+  counter-reset: sec3;
+}
+.md-typeset.numbered h2::before {
+  content: counter(chapter) "-" counter(sec2) ". ";
+}
+
+/* H3 = 小項目 (1-1-1.) */
+.md-typeset.numbered h3 {
+  counter-increment: sec3;
+}
+.md-typeset.numbered h3::before {
+  content: counter(chapter) "-" counter(sec2) "-" counter(sec3) ". ";
+}

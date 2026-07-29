@@ -1,0 +1,49 @@
+# ============================================================
+# MkDocs 設定 (docs/*.md を Material テーマの静的サイトに変換)
+#
+# 前提・思想は wiki.js / PDF と共通:
+#   - md の見出しには章番号を書かない
+#   - ファイル名の数字プレフィックス (01_overview 等) が章番号=表示順
+#   - 章番号は docs/assets/numbering.css + numbering.js で自動注入する
+#     (wiki.js の custom-css.css / head-injection.html と同じ方式)
+#
+# ナビゲーションは明示せず自動生成させる。ファイル名順に並ぶため、
+# tools/renumber.ps1 で番号を振り直せばナビ順も自動で追従する
+# (本文もナビ定義も手修正不要)。
+# ============================================================
+
+site_name: 在庫管理システム ソフトウェア仕様書
+docs_dir: docs
+# 生成物は site/ (下記 build コマンド参照)。.gitignore 済み。
+
+theme:
+  name: material
+  language: ja
+  features:
+    - navigation.instant   # SPA風ページ遷移 (numbering.js は document$ で対応済み)
+    - navigation.top
+    - navigation.tracking
+    - content.code.copy
+  palette:
+    - scheme: default
+      toggle:
+        icon: material/weather-night
+        name: ダークモードに切替
+    - scheme: slate
+      toggle:
+        icon: material/weather-sunny
+        name: ライトモードに切替
+
+extra_css:
+  - assets/numbering.css
+extra_javascript:
+  - assets/numbering.js
+
+markdown_extensions:
+  - toc:
+      permalink: true
+      toc_depth: 3
+  - tables
+  - admonition
+  - pymdownx.highlight
+  - pymdownx.superfences
