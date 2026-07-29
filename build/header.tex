@@ -2,17 +2,27 @@
 \XeTeXlinebreaklocale "ja"
 \XeTeXlinebreakskip=0pt plus 1pt minus 0.1pt
 
-% 章(H1=section)ごとに改ページ
+% 大分類(H1=section)ごとに改ページ
 \usepackage{etoolbox}
 \pretocmd{\section}{\clearpage}{}{}
 
-% 採番形式を 1, 1-1, 1-1-1 に (wiki.js 側の表示と統一)
+% 採番形式を 1, 1-1, 1-1-1, 1-1-1-1 に (wiki.js / MkDocs 側の表示と統一)
+%  section        = 大分類            → 1
+%  subsection     = 画面(小分類)      → 1-1
+%  subsubsection  = 画面内 H2         → 1-1-1
+%  paragraph      = 画面内 H3         → 1-1-1-1
 \renewcommand{\thesubsection}{\thesection-\arabic{subsection}}
-\renewcommand{\thesubsubsection}{\thesection-\arabic{subsection}-\arabic{subsubsection}}
+\renewcommand{\thesubsubsection}{\thesubsection-\arabic{subsubsection}}
+\renewcommand{\theparagraph}{\thesubsubsection-\arabic{paragraph}}
 
-% 小項目(H3)まで採番・目次掲載
-\setcounter{secnumdepth}{3}
-\setcounter{tocdepth}{3}
+% paragraph(H4)を既定の行内見出しからブロック見出しに変更
+\usepackage{titlesec}
+\titleformat{\paragraph}[hang]{\normalfont\bfseries}{\theparagraph}{1em}{}
+\titlespacing*{\paragraph}{0pt}{2.0ex plus 1ex minus .2ex}{1.0ex plus .2ex}
+
+% H4(paragraph)まで採番・目次掲載
+\setcounter{secnumdepth}{4}
+\setcounter{tocdepth}{4}
 
 % 目次タイトル
 \renewcommand{\contentsname}{目次}

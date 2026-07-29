@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="ja" xml:lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.10" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="author" content="株式会社サンプル 開発部" />
+  <meta name="dcterms.date" content="2026-07-18" />
+  <title>在庫管理システム ソフトウェア仕様書</title>
+  <style>
+
+html {
+color: #1a1a1a;
+background-color: #fdfdfd;
+}
+body {
+margin: 0 auto;
+max-width: 36em;
+padding-left: 50px;
+padding-right: 50px;
+padding-top: 50px;
+padding-bottom: 50px;
+hyphens: auto;
+overflow-wrap: break-word;
+text-rendering: optimizeLegibility;
+font-kerning: normal;
+}
+@media (max-width: 600px) {
+body {
+font-size: 0.9em;
+padding: 12px;
+}
+h1 {
+font-size: 1.8em;
+}
+}
+@media print {
+html {
+background-color: white;
+}
+body {
+background-color: transparent;
+color: black;
+font-size: 12pt;
+}
+p, h2, h3 {
+orphans: 3;
+widows: 3;
+}
+h2, h3, h4 {
+page-break-after: avoid;
+}
+}
+p {
+margin: 1em 0;
+}
+a {
+color: #1a1a1a;
+}
+a:visited {
+color: #1a1a1a;
+}
+img {
+max-width: 100%;
+}
+svg {
+height: auto;
+max-width: 100%;
+}
+h1, h2, h3, h4, h5, h6 {
+margin-top: 1.4em;
+}
+h5, h6 {
+font-size: 1em;
+font-style: italic;
+}
+h6 {
+font-weight: normal;
+}
+ol, ul {
+padding-left: 1.7em;
+margin-top: 1em;
+}
+li > ol, li > ul {
+margin-top: 0;
+}
+blockquote {
+margin: 1em 0 1em 1.7em;
+padding-left: 1em;
+border-left: 2px solid #e6e6e6;
+color: #606060;
+}
+code {
+white-space: pre-wrap;
+font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+font-size: 85%;
+margin: 0;
+hyphens: manual;
+}
+pre {
+margin: 1em 0;
+overflow: auto;
+}
+pre code {
+padding: 0;
+overflow: visible;
+overflow-wrap: normal;
+}
+.sourceCode {
+background-color: transparent;
+overflow: visible;
+}
+hr {
+border: none;
+border-top: 1px solid #1a1a1a;
+height: 1px;
+margin: 1em 0;
+}
+table {
+margin: 1em 0;
+border-collapse: collapse;
+width: 100%;
+overflow-x: auto;
+display: block;
+font-variant-numeric: lining-nums tabular-nums;
+}
+table caption {
+margin-bottom: 0.75em;
+}
+tbody {
+margin-top: 0.5em;
+border-top: 1px solid #1a1a1a;
+border-bottom: 1px solid #1a1a1a;
+}
+th {
+border-top: 1px solid #1a1a1a;
+padding: 0.25em 0.5em 0.25em 0.5em;
+}
+td {
+padding: 0.125em 0.5em 0.25em 0.5em;
+}
+header {
+margin-bottom: 4em;
+text-align: center;
+}
+#TOC li {
+list-style: none;
+}
+#TOC ul {
+padding-left: 1.3em;
+}
+#TOC > ul {
+padding-left: 0;
+}
+#TOC a:not(:hover) {
+text-decoration: none;
+}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+
+ul.task-list[class]{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+font-size: inherit;
+width: 0.8em;
+margin: 0 0.8em 0.2em -1.6em;
+vertical-align: middle;
+}
+.display.math{display: block; text-align: center; margin: 0.5rem auto;}
+
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">在庫管理システム ソフトウェア仕様書</h1>
+<p class="subtitle">Version 1.0</p>
+<p class="author">株式会社サンプル 開発部</p>
+<p class="date">2026-07-18</p>
+</header>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#概要" id="toc-概要"><span class="toc-section-number">1</span> 概要</a>
+<ul>
+<li><a href="#概要-1" id="toc-概要-1"><span class="toc-section-number">1.1</span> 概要</a>
+<ul>
+<li><a href="#目的" id="toc-目的"><span class="toc-section-number">1.1.1</span> 目的</a></li>
+<li><a href="#対象読者" id="toc-対象読者"><span class="toc-section-number">1.1.2</span> 対象読者</a></li>
+<li><a href="#用語定義" id="toc-用語定義"><span class="toc-section-number">1.1.3</span> 用語定義</a></li>
+<li><a href="#機能一覧" id="toc-機能一覧"><span class="toc-section-number">1.1.4</span> 機能一覧</a></li>
+<li><a href="#関連文書" id="toc-関連文書"><span class="toc-section-number">1.1.5</span> 関連文書</a></li>
+</ul></li>
+</ul></li>
+<li><a href="#システム構成" id="toc-システム構成"><span class="toc-section-number">2</span> システム構成</a>
+<ul>
+<li><a href="#システム構成-1" id="toc-システム構成-1"><span class="toc-section-number">2.1</span> システム構成</a>
+<ul>
+<li><a href="#全体構成" id="toc-全体構成"><span class="toc-section-number">2.1.1</span> 全体構成</a></li>
+<li><a href="#技術スタック" id="toc-技術スタック"><span class="toc-section-number">2.1.2</span> 技術スタック</a></li>
+<li><a href="#コンポーネント構成" id="toc-コンポーネント構成"><span class="toc-section-number">2.1.3</span> コンポーネント構成</a>
+<ul>
+<li><a href="#api-サーバ" id="toc-api-サーバ"><span class="toc-section-number">2.1.3.1</span> API サーバ</a></li>
+<li><a href="#バッチ処理" id="toc-バッチ処理"><span class="toc-section-number">2.1.3.2</span> バッチ処理</a></li>
+<li><a href="#外部連携" id="toc-外部連携"><span class="toc-section-number">2.1.3.3</span> 外部連携</a></li>
+</ul></li>
+</ul></li>
+</ul></li>
+<li><a href="#画面仕様" id="toc-画面仕様"><span class="toc-section-number">3</span> 画面仕様</a>
+<ul>
+<li><a href="#ログイン画面-f-001" id="toc-ログイン画面-f-001"><span class="toc-section-number">3.1</span> ログイン画面 (F-001)</a>
+<ul>
+<li><a href="#画面仕様-1" id="toc-画面仕様-1"><span class="toc-section-number">3.1.1</span> 画面仕様</a></li>
+<li><a href="#処理フロー" id="toc-処理フロー"><span class="toc-section-number">3.1.2</span> 処理フロー</a></li>
+<li><a href="#エラー仕様" id="toc-エラー仕様"><span class="toc-section-number">3.1.3</span> エラー仕様</a></li>
+</ul></li>
+<li><a href="#在庫照会画面-f-002" id="toc-在庫照会画面-f-002"><span class="toc-section-number">3.2</span> 在庫照会画面 (F-002)</a>
+<ul>
+<li><a href="#検索条件" id="toc-検索条件"><span class="toc-section-number">3.2.1</span> 検索条件</a></li>
+<li><a href="#検索結果一覧" id="toc-検索結果一覧"><span class="toc-section-number">3.2.2</span> 検索結果一覧</a></li>
+</ul></li>
+<li><a href="#入庫登録画面-f-003" id="toc-入庫登録画面-f-003"><span class="toc-section-number">3.3</span> 入庫登録画面 (F-003)</a>
+<ul>
+<li><a href="#画面仕様-2" id="toc-画面仕様-2"><span class="toc-section-number">3.3.1</span> 画面仕様</a></li>
+<li><a href="#処理フロー-1" id="toc-処理フロー-1"><span class="toc-section-number">3.3.2</span> 処理フロー</a></li>
+<li><a href="#エラー仕様-1" id="toc-エラー仕様-1"><span class="toc-section-number">3.3.3</span> エラー仕様</a></li>
+</ul></li>
+<li><a href="#出庫登録画面-f-004" id="toc-出庫登録画面-f-004"><span class="toc-section-number">3.4</span> 出庫登録画面 (F-004)</a>
+<ul>
+<li><a href="#画面仕様-3" id="toc-画面仕様-3"><span class="toc-section-number">3.4.1</span> 画面仕様</a></li>
+<li><a href="#処理フロー-2" id="toc-処理フロー-2"><span class="toc-section-number">3.4.2</span> 処理フロー</a></li>
+<li><a href="#エラー仕様-2" id="toc-エラー仕様-2"><span class="toc-section-number">3.4.3</span> エラー仕様</a></li>
+</ul></li>
+</ul></li>
+<li><a href="#api仕様" id="toc-api仕様"><span class="toc-section-number">4</span> API仕様</a>
+<ul>
+<li><a href="#在庫照会api-f-002" id="toc-在庫照会api-f-002"><span class="toc-section-number">4.1</span> 在庫照会API (F-002)</a>
+<ul>
+<li><a href="#リクエスト" id="toc-リクエスト"><span class="toc-section-number">4.1.1</span> リクエスト</a></li>
+<li><a href="#レスポンス" id="toc-レスポンス"><span class="toc-section-number">4.1.2</span> レスポンス</a></li>
+<li><a href="#エラーレスポンス" id="toc-エラーレスポンス"><span class="toc-section-number">4.1.3</span> エラーレスポンス</a></li>
+</ul></li>
+<li><a href="#入庫登録api-f-003" id="toc-入庫登録api-f-003"><span class="toc-section-number">4.2</span> 入庫登録API (F-003)</a>
+<ul>
+<li><a href="#リクエスト-1" id="toc-リクエスト-1"><span class="toc-section-number">4.2.1</span> リクエスト</a></li>
+<li><a href="#レスポンス-1" id="toc-レスポンス-1"><span class="toc-section-number">4.2.2</span> レスポンス</a></li>
+<li><a href="#エラーレスポンス-1" id="toc-エラーレスポンス-1"><span class="toc-section-number">4.2.3</span> エラーレスポンス</a></li>
+</ul></li>
+</ul></li>
+</ul>
+</nav>
+<h1 data-number="1" id="概要"><span class="header-section-number">1</span> 概要</h1>
+<h2 data-number="1.1" id="概要-1"><span class="header-section-number">1.1</span> 概要</h2>
+<p>本書は在庫管理システム(以下、本システム)のソフトウェア仕様を定めるものである。</p>
+<blockquote>
+<p><strong>注</strong>: 見出しに章番号は記載しない。番号は wiki.js /
+MkDocs 上では CSS カウンタ、PDF では Pandoc の
+<code>--number-sections</code> により自動採番される。</p>
+</blockquote>
+<h3 data-number="1.1.1" id="目的"><span class="header-section-number">1.1.1</span> 目的</h3>
+<p>本システムは、倉庫内の在庫情報をリアルタイムに管理し、入出庫作業の効率化と棚卸工数の削減を目的とする。</p>
+<h3 data-number="1.1.2" id="対象読者"><span class="header-section-number">1.1.2</span> 対象読者</h3>
+<p>本書は以下の読者を対象とする。</p>
+<ul>
+<li>開発担当者(実装・テストの根拠として参照)</li>
+<li>保守担当者(改修時の影響範囲調査に使用)</li>
+<li>顧客側システム担当者(受入検収の基準として参照)</li>
+</ul>
+<h3 data-number="1.1.3" id="用語定義"><span class="header-section-number">1.1.3</span> 用語定義</h3>
+<table>
+<thead>
+<tr>
+<th>用語</th>
+<th>説明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SKU</td>
+<td>Stock Keeping Unit。在庫管理上の最小識別単位</td>
+</tr>
+<tr>
+<td>ロケーション</td>
+<td>倉庫内の棚位置を示すコード</td>
+</tr>
+<tr>
+<td>引当</td>
+<td>出荷指示に対して在庫を確保する処理</td>
+</tr>
+</tbody>
+</table>
+<h3 data-number="1.1.4" id="機能一覧"><span class="header-section-number">1.1.4</span> 機能一覧</h3>
+<p>本システムが提供する機能の一覧を示す。画面仕様・API仕様の各章は本一覧の機能IDに対応する。</p>
+<table>
+<thead>
+<tr>
+<th>機能ID</th>
+<th>機能名</th>
+<th>概要</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>F-001</td>
+<td>ログイン</td>
+<td>利用者認証を行う</td>
+</tr>
+<tr>
+<td>F-002</td>
+<td>在庫照会</td>
+<td>SKU・ロケーション単位で在庫を検索する</td>
+</tr>
+<tr>
+<td>F-003</td>
+<td>入庫登録</td>
+<td>入庫実績を登録し在庫数を加算する</td>
+</tr>
+<tr>
+<td>F-004</td>
+<td>出庫登録</td>
+<td>出庫実績を登録し在庫数を減算する</td>
+</tr>
+</tbody>
+</table>
+<h3 data-number="1.1.5" id="関連文書"><span class="header-section-number">1.1.5</span> 関連文書</h3>
+<ul>
+<li>要件定義書(REQ-2026-001)</li>
+<li>画面設計書(UI-2026-002)</li>
+</ul>
+<h1 data-number="2" id="システム構成"><span class="header-section-number">2</span> システム構成</h1>
+<h2 data-number="2.1" id="システム構成-1"><span class="header-section-number">2.1</span> システム構成</h2>
+<h3 data-number="2.1.1" id="全体構成"><span class="header-section-number">2.1.1</span> 全体構成</h3>
+<p>本システムは Web アプリケーションとして構築し、クライアント・API
+サーバ・データベースの 3 層構成とする。</p>
+<pre><code>[ブラウザ] --HTTPS--&gt; [APIサーバ (Node.js)] ---&gt; [PostgreSQL]
+                              |
+                              +--&gt; [Redis (セッション/キャッシュ)]</code></pre>
+<h3 data-number="2.1.2" id="技術スタック"><span class="header-section-number">2.1.2</span> 技術スタック</h3>
+<table>
+<thead>
+<tr>
+<th>層</th>
+<th>技術</th>
+<th>バージョン</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>フロントエンド</td>
+<td>Vue.js</td>
+<td>3.x</td>
+</tr>
+<tr>
+<td>バックエンド</td>
+<td>Node.js / Express</td>
+<td>20.x / 4.x</td>
+</tr>
+<tr>
+<td>データベース</td>
+<td>PostgreSQL</td>
+<td>16.x</td>
+</tr>
+<tr>
+<td>キャッシュ</td>
+<td>Redis</td>
+<td>7.x</td>
+</tr>
+</tbody>
+</table>
+<h3 data-number="2.1.3" id="コンポーネント構成"><span class="header-section-number">2.1.3</span> コンポーネント構成</h3>
+<h4 data-number="2.1.3.1" id="api-サーバ"><span class="header-section-number">2.1.3.1</span> API サーバ</h4>
+<p>REST API を提供する。認証・在庫・入出庫・マスタ管理の 4
+モジュールで構成する。</p>
+<h4 data-number="2.1.3.2" id="バッチ処理"><span class="header-section-number">2.1.3.2</span> バッチ処理</h4>
+<p>夜間バッチとして以下を実行する。</p>
+<ol type="1">
+<li>在庫スナップショットの作成(毎日 2:00)</li>
+<li>操作ログのアーカイブ(毎週日曜 3:00)</li>
+</ol>
+<h4 data-number="2.1.3.3" id="外部連携"><span class="header-section-number">2.1.3.3</span> 外部連携</h4>
+<p>基幹システムとは CSV ファイルの SFTP
+連携とする。連携仕様は外部インタフェース仕様の章を参照。</p>
+<h1 data-number="3" id="画面仕様"><span class="header-section-number">3</span> 画面仕様</h1>
+<h2 data-number="3.1" id="ログイン画面-f-001"><span class="header-section-number">3.1</span> ログイン画面 (F-001)</h2>
+<p>ユーザ ID とパスワードを入力し認証する。5
+回連続で失敗した場合、アカウントを 30 分間ロックする。</p>
+<h3 data-number="3.1.1" id="画面仕様-1"><span class="header-section-number">3.1.1</span> 画面仕様</h3>
+<table>
+<thead>
+<tr>
+<th>項目</th>
+<th>型</th>
+<th>必須</th>
+<th>説明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ユーザID</td>
+<td>テキスト</td>
+<td>○</td>
+<td>半角英数 8 桁</td>
+</tr>
+<tr>
+<td>パスワード</td>
+<td>パスワード</td>
+<td>○</td>
+<td>12 文字以上</td>
+</tr>
+<tr>
+<td>ログインボタン</td>
+<td>ボタン</td>
+<td>-</td>
+<td>入力値を送信し認証を行う</td>
+</tr>
+</tbody>
+</table>
+<h3 data-number="3.1.2" id="処理フロー"><span class="header-section-number">3.1.2</span> 処理フロー</h3>
+<ol type="1">
+<li>入力値のバリデーション(ID: 半角英数 8 桁、パスワード: 12
+文字以上)</li>
+<li>パスワードハッシュ(bcrypt)の照合</li>
+<li>セッショントークンの発行(有効期限 8 時間)</li>
+</ol>
+<h3 data-number="3.1.3" id="エラー仕様"><span class="header-section-number">3.1.3</span> エラー仕様</h3>
+<table>
+<thead>
+<tr>
+<th>コード</th>
+<th>メッセージ</th>
+<th>条件</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>E-0101</td>
+<td>IDまたはパスワードが不正です</td>
+<td>認証失敗</td>
+</tr>
+<tr>
+<td>E-0102</td>
+<td>アカウントがロックされています</td>
+<td>ロック中</td>
+</tr>
+</tbody>
+</table>
+<h2 data-number="3.2" id="在庫照会画面-f-002"><span class="header-section-number">3.2</span> 在庫照会画面 (F-002)</h2>
+<p>SKU・ロケーション単位で在庫を検索し、一覧表示する。検索結果は在庫照会
+API を通じて取得する。</p>
+<h3 data-number="3.2.1" id="検索条件"><span class="header-section-number">3.2.1</span> 検索条件</h3>
+<p>SKU
+コード(前方一致)、ロケーション(完全一致)、在庫区分(良品/不良品)を指定できる。</p>
+<table>
+<thead>
+<tr>
+<th>項目</th>
+<th>型</th>
+<th>必須</th>
+<th>説明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SKUコード</td>
+<td>テキスト</td>
+<td>-</td>
+<td>前方一致で検索</td>
+</tr>
+<tr>
+<td>ロケーション</td>
+<td>テキスト</td>
+<td>-</td>
+<td>完全一致で検索</td>
+</tr>
+<tr>
+<td>在庫区分</td>
+<td>プルダウン</td>
+<td>-</td>
+<td>良品 / 不良品</td>
+</tr>
+</tbody>
+</table>
+<h3 data-number="3.2.2" id="検索結果一覧"><span class="header-section-number">3.2.2</span> 検索結果一覧</h3>
+<table>
+<thead>
+<tr>
+<th>列</th>
+<th>説明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SKU</td>
+<td>在庫の最小識別単位</td>
+</tr>
+<tr>
+<td>ロケーション</td>
+<td>棚位置コード</td>
+</tr>
+<tr>
+<td>数量</td>
+<td>現在在庫数</td>
+</tr>
+<tr>
+<td>在庫区分</td>
+<td>良品 / 不良品</td>
+</tr>
+</tbody>
+</table>
+<p>検索結果が 0 件の場合は「該当する在庫がありません」を表示する。</p>
+<h2 data-number="3.3" id="入庫登録画面-f-003"><span class="header-section-number">3.3</span> 入庫登録画面 (F-003)</h2>
+<p>入庫実績を登録し、対象 SKU・ロケーションの在庫数を加算する。</p>
+<h3 data-number="3.3.1" id="画面仕様-2"><span class="header-section-number">3.3.1</span> 画面仕様</h3>
+<table>
+<thead>
+<tr>
+<th>項目</th>
+<th>型</th>
+<th>必須</th>
+<th>説明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SKUコード</td>
+<td>テキスト</td>
+<td>○</td>
+<td>入庫対象の SKU</td>
+</tr>
+<tr>
+<td>ロケーション</td>
+<td>テキスト</td>
+<td>○</td>
+<td>格納先の棚位置</td>
+</tr>
+<tr>
+<td>入庫数量</td>
+<td>数値</td>
+<td>○</td>
+<td>1 以上の整数</td>
+</tr>
+<tr>
+<td>登録ボタン</td>
+<td>ボタン</td>
+<td>-</td>
+<td>入庫実績を確定する</td>
+</tr>
+</tbody>
+</table>
+<h3 data-number="3.3.2" id="処理フロー-1"><span class="header-section-number">3.3.2</span> 処理フロー</h3>
+<ol type="1">
+<li>入力値のバリデーション(数量は 1 以上の整数)</li>
+<li>対象 SKU・ロケーションの在庫数に入庫数量を加算</li>
+<li>入庫履歴の記録(登録者・登録日時)</li>
+</ol>
+<h3 data-number="3.3.3" id="エラー仕様-1"><span class="header-section-number">3.3.3</span> エラー仕様</h3>
+<table>
+<thead>
+<tr>
+<th>コード</th>
+<th>メッセージ</th>
+<th>条件</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>E-0301</td>
+<td>入庫数量は 1 以上で入力してください</td>
+<td>数量が 0 以下</td>
+</tr>
+<tr>
+<td>E-0302</td>
+<td>該当する SKU が存在しません</td>
+<td>未登録の SKU</td>
+</tr>
+</tbody>
+</table>
+<h2 data-number="3.4" id="出庫登録画面-f-004"><span class="header-section-number">3.4</span> 出庫登録画面 (F-004)</h2>
+<p>出庫実績を登録し、対象 SKU・ロケーションの在庫数を減算する。</p>
+<h3 data-number="3.4.1" id="画面仕様-3"><span class="header-section-number">3.4.1</span> 画面仕様</h3>
+<table>
+<thead>
+<tr>
+<th>項目</th>
+<th>型</th>
+<th>必須</th>
+<th>説明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SKUコード</td>
+<td>テキスト</td>
+<td>○</td>
+<td>出庫対象の SKU</td>
+</tr>
+<tr>
+<td>ロケーション</td>
+<td>テキスト</td>
+<td>○</td>
+<td>出庫元の棚位置</td>
+</tr>
+<tr>
+<td>出庫数量</td>
+<td>数値</td>
+<td>○</td>
+<td>1 以上の整数</td>
+</tr>
+<tr>
+<td>登録ボタン</td>
+<td>ボタン</td>
+<td>-</td>
+<td>出庫実績を確定する</td>
+</tr>
+</tbody>
+</table>
+<h3 data-number="3.4.2" id="処理フロー-2"><span class="header-section-number">3.4.2</span> 処理フロー</h3>
+<ol type="1">
+<li>入力値のバリデーション(数量は 1 以上の整数)</li>
+<li>引当済み在庫数の確認(出庫可能数を超えないこと)</li>
+<li>対象 SKU・ロケーションの在庫数から出庫数量を減算</li>
+<li>出庫履歴の記録(登録者・登録日時)</li>
+</ol>
+<h3 data-number="3.4.3" id="エラー仕様-2"><span class="header-section-number">3.4.3</span> エラー仕様</h3>
+<table>
+<thead>
+<tr>
+<th>コード</th>
+<th>メッセージ</th>
+<th>条件</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>E-0401</td>
+<td>出庫数量が在庫数を超えています</td>
+<td>在庫不足</td>
+</tr>
+<tr>
+<td>E-0402</td>
+<td>出庫数量は 1 以上で入力してください</td>
+<td>数量が 0 以下</td>
+</tr>
+</tbody>
+</table>
+<h1 data-number="4" id="api仕様"><span class="header-section-number">4</span> API仕様</h1>
+<h2 data-number="4.1" id="在庫照会api-f-002"><span class="header-section-number">4.1</span> 在庫照会API (F-002)</h2>
+<p>在庫照会画面から呼び出す、在庫検索用の REST API。</p>
+<h3 data-number="4.1.1" id="リクエスト"><span class="header-section-number">4.1.1</span> リクエスト</h3>
+<pre class="http"><code>GET /api/v1/stocks?sku=A100&amp;location=B-01-02
+Authorization: Bearer {token}</code></pre>
+<table>
+<thead>
+<tr>
+<th>クエリパラメータ</th>
+<th>必須</th>
+<th>説明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>sku</td>
+<td>-</td>
+<td>SKU コード(前方一致)</td>
+</tr>
+<tr>
+<td>location</td>
+<td>-</td>
+<td>ロケーション(完全一致)</td>
+</tr>
+<tr>
+<td>status</td>
+<td>-</td>
+<td>在庫区分(good / defective)</td>
+</tr>
+</tbody>
+</table>
+<h3 data-number="4.1.2" id="レスポンス"><span class="header-section-number">4.1.2</span> レスポンス</h3>
+<div class="sourceCode" id="cb3"><pre class="sourceCode json"><code class="sourceCode json"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;items&quot;</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">{</span> <span class="dt">&quot;sku&quot;</span><span class="fu">:</span> <span class="st">&quot;A1001234&quot;</span><span class="fu">,</span> <span class="dt">&quot;location&quot;</span><span class="fu">:</span> <span class="st">&quot;B-01-02&quot;</span><span class="fu">,</span> <span class="dt">&quot;qty&quot;</span><span class="fu">:</span> <span class="dv">120</span><span class="fu">,</span> <span class="dt">&quot;status&quot;</span><span class="fu">:</span> <span class="st">&quot;good&quot;</span> <span class="fu">}</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="ot">]</span><span class="fu">,</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;total&quot;</span><span class="fu">:</span> <span class="dv">1</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<h3 data-number="4.1.3" id="エラーレスポンス"><span class="header-section-number">4.1.3</span> エラーレスポンス</h3>
+<table>
+<thead>
+<tr>
+<th>HTTP</th>
+<th>コード</th>
+<th>条件</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>401</td>
+<td>E-0102</td>
+<td>トークン不正・期限切れ</td>
+</tr>
+<tr>
+<td>400</td>
+<td>E-0201</td>
+<td>クエリパラメータの形式不正</td>
+</tr>
+</tbody>
+</table>
+<h2 data-number="4.2" id="入庫登録api-f-003"><span class="header-section-number">4.2</span> 入庫登録API (F-003)</h2>
+<p>入庫登録画面から呼び出す、入庫実績登録用の REST API。</p>
+<h3 data-number="4.2.1" id="リクエスト-1"><span class="header-section-number">4.2.1</span> リクエスト</h3>
+<pre class="http"><code>POST /api/v1/receipts
+Authorization: Bearer {token}
+Content-Type: application/json
+
+{
+  &quot;sku&quot;: &quot;A1001234&quot;,
+  &quot;location&quot;: &quot;B-01-02&quot;,
+  &quot;qty&quot;: 50
+}</code></pre>
+<table>
+<thead>
+<tr>
+<th>ボディ項目</th>
+<th>必須</th>
+<th>説明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>sku</td>
+<td>○</td>
+<td>入庫対象の SKU</td>
+</tr>
+<tr>
+<td>location</td>
+<td>○</td>
+<td>格納先のロケーション</td>
+</tr>
+<tr>
+<td>qty</td>
+<td>○</td>
+<td>入庫数量(1 以上の整数)</td>
+</tr>
+</tbody>
+</table>
+<h3 data-number="4.2.2" id="レスポンス-1"><span class="header-section-number">4.2.2</span> レスポンス</h3>
+<div class="sourceCode" id="cb5"><pre class="sourceCode json"><code class="sourceCode json"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;receiptId&quot;</span><span class="fu">:</span> <span class="st">&quot;R-20260730-0001&quot;</span><span class="fu">,</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;sku&quot;</span><span class="fu">:</span> <span class="st">&quot;A1001234&quot;</span><span class="fu">,</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;location&quot;</span><span class="fu">:</span> <span class="st">&quot;B-01-02&quot;</span><span class="fu">,</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;qty&quot;</span><span class="fu">:</span> <span class="dv">50</span><span class="fu">,</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;stockAfter&quot;</span><span class="fu">:</span> <span class="dv">170</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<h3 data-number="4.2.3" id="エラーレスポンス-1"><span class="header-section-number">4.2.3</span> エラーレスポンス</h3>
+<table>
+<thead>
+<tr>
+<th>HTTP</th>
+<th>コード</th>
+<th>条件</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>401</td>
+<td>E-0102</td>
+<td>トークン不正・期限切れ</td>
+</tr>
+<tr>
+<td>400</td>
+<td>E-0301</td>
+<td>入庫数量が 1 未満</td>
+</tr>
+<tr>
+<td>404</td>
+<td>E-0302</td>
+<td>該当する SKU が存在しない</td>
+</tr>
+</tbody>
+</table>
+</body>
+</html>

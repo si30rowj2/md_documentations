@@ -1,7 +1,12 @@
-# ============================================================
+﻿# ============================================================
 # ソフトウェア仕様書 PDF ビルドスクリプト (Windows)
 # 必要: Pandoc, TeX ディストリビューション(MiKTeX / TeX Live) ※xelatex を使用
 # 実行: .\build\build.ps1  (リポジトリのルートで実行)
+#
+# 2階層フォルダ構成 (docs/NN_大分類/NN_画面.md) を tools\combine.ps1 で
+# 1つの md に結合してから pandoc に渡す。結合時に front matter 除去・
+# 見出しの1段下げ・大分類見出し(# 大分類名)の注入が行われるため、
+# pandoc --number-sections で 1 / 1-1 / 1-1-1 / 1-1-1-1 と自動採番される。
 # ============================================================
 param(
     # 本文フォント。Windows 標準なら "Yu Mincho" / "Yu Gothic"、
@@ -12,33 +17,25 @@ param(
     [string]$Output   = "output\仕様書.pdf"
 )
 
+$ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
 Set-Location $root
 New-Item -ItemType Directory -Force -Path (Split-Path $Output) | Out-Null
 
-# wiki.js 用 front matter (--- ~ ---) を除去した一時ファイルを作る
-# (front matter の title が PDF のタイトルを上書きしてしまうのを防ぐ)
-$tmpDir = Join-Path $env:TEMP "spec_pdf_build"
-if (Test-Path $tmpDir) { Remove-Item $tmpDir -Recurse -Force }
-New-Item -ItemType Directory -Path $tmpDir | Out-Null
+# docs/ を1つの md に結合 (大分類フォルダを結合し見出しを整える)
+$merged = Join-Path $env:TEMP "spec_pdf_build\仕様書.md"
+& (Join-Path $PSScriptRoot "..\tools\combine.ps1") -Mode Single -Out $merged
 
-foreach ($f in (Get-ChildItem "docs\*.md" | Sort-Object Name)) {
-    $lines = Get-Content $f.FullName -Encoding UTF8
-    if ($lines.Count -gt 0 -and $lines[0] -match '^---\s*$') {
-        $end = 1
-        while ($end -lt $lines.Count -and $lines[$end] -notmatch '^(---|\.\.\.)\s*$') { $end++ }
-        $lines = $lines[($end + 1)..($lines.Count - 1)]
-    }
-    $lines | Set-Content (Join-Path $tmpDir $f.Name) -Encoding UTF8
-}
-
-# 数字プレフィックス順に md を結合 → 章番号は自動採番される
-$files = Get-ChildItem "$tmpDir\*.md" | Sort-Object Name | ForEach-Object { $_.FullName }
-
-pandoc @files `
+# pandoc(xelatex)は MiKTeX の非致命警告 (例: "you have not checked for
+# MiKTeX updates") を stderr に出す。ErrorActionPreference='Stop' のままだと
+# PowerShell がそれを致命エラー扱いして PDF 生成後でも停止するため、この
+# 呼び出しの間だけ 'Continue' にし、成否は $LASTEXITCODE で判定する。
+$prevEAP = $ErrorActionPreference
+$ErrorActionPreference = 'Continue'
+pandoc $merged `
     --from markdown `
     --metadata-file="build\metadata.yaml" `
-    --toc --toc-depth=3 `
+    --toc --toc-depth=4 `
     --number-sections `
     --pdf-engine=xelatex `
     --include-in-header="build\header.tex" `
@@ -50,5 +47,7 @@ pandoc @files `
     -V colorlinks=true `
     -V linkcolor=blue `
     -o $Output
+$pandocExit = $LASTEXITCODE
+$ErrorActionPreference = $prevEAP
 
-if ($LASTEXITCODE -eq 0) { Write-Host "OK: $Output" } else { Write-Error "PDF 生成に失敗しました" }
+if ($pandocExit -eq 0) { Write-Host "OK: $Output" } else { Write-Error "PDF 生成に失敗しました" }

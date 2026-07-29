@@ -2,3 +2,5 @@
 # インストール:  pip install -r requirements.txt
 # pymdown-extensions は mkdocs-material の依存として自動で入る
 mkdocs-material>=9.5
+# 大分類フォルダのナビ名を .pages の title で付けるため
+mkdocs-awesome-pages-plugin>=2.9

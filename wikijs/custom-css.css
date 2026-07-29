@@ -2,44 +2,62 @@
  * wiki.js 見出し自動採番CSS
  * 管理画面 → テーマ → 「CSSオーバーライド」に貼り付ける
  *
- * 前提:
- *  - 1ページ = 1章。ページ内の H1 が章タイトル
- *  - 章番号はページパスの数字プレフィックス (01_overview 等) から
- *    head-injection.html のスクリプトが counter-reset で注入する
- *  - 採番形式: 章 = "1."、中項目 = "1-1."、小項目 = "1-1-1."
+ * 前提 (MkDocs 版 docs/assets/numbering.css と同一思想):
+ *  - 2階層フォルダ構成。大分類 = フォルダ (03_screens 等)、
+ *    小分類 = ファイル (01_login 等) = ページ内 H1
+ *  - 番号はページパスの数字プレフィックス2つ (例 /docs/03_screens/01_login)
+ *    から head-injection.html のスクリプトが counter-reset で注入する
+ *  - 採番形式: H1 = "大-小." (3-1.)、H2 = "大-小-中." (3-1-1.)、
+ *    H3 = "大-小-中-小." (3-1-2.)
  * ============================================================ */
 
-/* 章番号のデフォルト(スクリプト未適用時は 0 のまま非表示にする) */
+/* カウンタの起点 (スクリプト未適用時は 0 のまま) */
 .contents {
-  counter-reset: chapter 0 sec2 0;
+  counter-reset: cat 0 sub 0 h2 0 h3 0;
 }
 
-/* H1 = 章タイトル */
-.contents h1 {
-  counter-reset: sec2;
+/* --- lvl2: 大分類フォルダ配下のページ (H1 = 小分類タイトル) --- */
+
+.contents.lvl2 h1 {
+  counter-reset: h2 0 h3 0;
 }
-.contents h1::before {
-  content: counter(chapter) ". ";
+.contents.lvl2 h1::before {
+  content: counter(cat) "-" counter(sub) ". ";
+}
+.contents.lvl2 h2 {
+  counter-increment: h2;
+  counter-reset: h3;
+}
+.contents.lvl2 h2::before {
+  content: counter(cat) "-" counter(sub) "-" counter(h2) ". ";
+}
+.contents.lvl2 h3 {
+  counter-increment: h3;
+}
+.contents.lvl2 h3::before {
+  content: counter(cat) "-" counter(sub) "-" counter(h2) "-" counter(h3) ". ";
 }
 
-/* H2 = 中項目 (1-1.) */
-.contents h2 {
-  counter-increment: sec2;
-  counter-reset: sec3;
+/* --- lvl1: 大分類番号だけ取れたページ (フォールバック) --- */
+
+.contents.lvl1 h1::before {
+  content: counter(cat) ". ";
 }
-.contents h2::before {
-  content: counter(chapter) "-" counter(sec2) ". ";
+.contents.lvl1 h2 {
+  counter-increment: h2;
+  counter-reset: h3;
+}
+.contents.lvl1 h2::before {
+  content: counter(cat) "-" counter(h2) ". ";
+}
+.contents.lvl1 h3 {
+  counter-increment: h3;
+}
+.contents.lvl1 h3::before {
+  content: counter(cat) "-" counter(h2) "-" counter(h3) ". ";
 }
 
-/* H3 = 小項目 (1-1-1.) */
-.contents h3 {
-  counter-increment: sec3;
-}
-.contents h3::before {
-  content: counter(chapter) "-" counter(sec2) "-" counter(sec3) ". ";
-}
-
-/* 章番号が特定できないページ(プレフィックスなし)では番号を出さない */
+/* 番号が特定できないページ(プレフィックスなし)では番号を出さない */
 .contents:not(.numbered) h1::before,
 .contents:not(.numbered) h2::before,
 .contents:not(.numbered) h3::before {

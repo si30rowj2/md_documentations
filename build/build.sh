@@ -2,6 +2,11 @@
 # ソフトウェア仕様書 PDF ビルドスクリプト (Linux/macOS)
 # 必要: pandoc, xelatex (texlive), xeCJK, 日本語フォント
 # 実行: bash build/build.sh  (リポジトリのルートで実行)
+#
+# 2階層フォルダ構成 (docs/NN_大分類/NN_画面.md) を tools/combine.sh で
+# 1つの md に結合してから pandoc に渡す。結合時に front matter 除去・
+# 見出しの1段下げ・大分類見出し(# 大分類名)の注入が行われるため、
+# pandoc --number-sections で 1 / 1-1 / 1-1-1 / 1-1-1-1 と自動採番される。
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -10,22 +15,14 @@ MONO_FONT="${MONO_FONT:-Noto Sans Mono CJK JP}"
 OUTPUT="${OUTPUT:-output/仕様書.pdf}"
 mkdir -p "$(dirname "$OUTPUT")"
 
-# wiki.js 用 front matter (--- ~ ---) を除去した一時ファイルを作る
-# (front matter の title が PDF のタイトルを上書きしてしまうのを防ぐ)
-TMPDIR_BUILD=$(mktemp -d)
-trap 'rm -rf "$TMPDIR_BUILD"' EXIT
-for f in docs/*.md; do
-  awk 'NR==1 && /^---[[:space:]]*$/ {fm=1; next}
-       fm==1 && /^(---|\.\.\.)[[:space:]]*$/ {fm=0; next}
-       fm==1 {next}
-       {print}' "$f" > "$TMPDIR_BUILD/$(basename "$f")"
-done
+# docs/ を1つの md に結合 (大分類フォルダを結合し見出しを整える)
+MERGED=$(mktemp -d)/仕様書.md
+bash tools/combine.sh --mode single --out "$MERGED"
 
-# 数字プレフィックス順に md を結合 → 章番号は自動採番される
-pandoc "$TMPDIR_BUILD"/*.md \
+pandoc "$MERGED" \
     --from markdown \
     --metadata-file=build/metadata.yaml \
-    --toc --toc-depth=3 \
+    --toc --toc-depth=4 \
     --number-sections \
     --pdf-engine=xelatex \
     --include-in-header=build/header.tex \

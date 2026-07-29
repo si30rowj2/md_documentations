@@ -1,9 +1,10 @@
 <!-- ============================================================
-  wiki.js 章番号注入スクリプト
+  wiki.js 見出し番号注入スクリプト
   管理画面 → テーマ → 「HTMLヘッド注入」に貼り付ける
 
-  ページパス末尾の数字プレフィックス (例: /spec/01_overview → 1,
-  /spec/03-functions → 3) を章番号として CSS カウンタに設定する。
+  2階層フォルダ構成のパス末尾2セグメント
+    (例 /docs/03_screens/01_login → 大分類 cat=3, 小分類 sub=1)
+  を数字プレフィックスから取り出し、CSS カウンタに設定する。
   wiki.js は SPA のためページ遷移を MutationObserver で監視する。
 ============================================================ -->
 <script>
@@ -11,15 +12,26 @@
   function applyChapterNumber() {
     var el = document.querySelector('.contents');
     if (!el) return;
-    // パス末尾セグメントの先頭数字を章番号とみなす (01_xxx, 03-yyy 等)
-    var seg = decodeURIComponent(location.pathname).split('/').pop() || '';
-    var m = seg.match(/^0*(\d+)[-_]/);
-    if (m) {
-      el.style.counterReset = 'chapter ' + parseInt(m[1], 10) + ' sec2 0';
-      el.classList.add('numbered');
+    // パスを / で分割し、先頭が数字プレフィックスのセグメントの番号を順に集める
+    var path = decodeURIComponent(location.pathname).replace(/\/+$/, '');
+    var nums = path.split('/').reduce(function (acc, seg) {
+      var s = seg.replace(/\.html$/, '');
+      var m = s.match(/^0*(\d+)[-_]/);
+      if (m) acc.push(parseInt(m[1], 10));
+      return acc;
+    }, []);
+
+    el.classList.remove('numbered', 'lvl1', 'lvl2');
+    if (nums.length >= 2) {
+      var sub = nums[nums.length - 1];
+      var cat = nums[nums.length - 2];
+      el.style.counterReset = 'cat ' + cat + ' sub ' + sub + ' h2 0 h3 0';
+      el.classList.add('numbered', 'lvl2');
+    } else if (nums.length === 1) {
+      el.style.counterReset = 'cat ' + nums[0] + ' h2 0 h3 0';
+      el.classList.add('numbered', 'lvl1');
     } else {
       el.style.counterReset = '';
-      el.classList.remove('numbered');
     }
   }
   var run = function () { setTimeout(applyChapterNumber, 0); };
