@@ -1,0 +1,63 @@
+# ============================================================
+# ドキュメント構造の「唯一の定義ファイル」
+#
+# ここ1ファイルだけで、wiki.js / MkDocs / PDF / 結合md すべての
+#   - 表示順
+#   - 章番号 (自動採番)
+#   - 文書メタデータ (PDF 表紙・サイトタイトル)
+# が決まる。
+#
+# 重要な原則:
+#   - docs/ のフォルダ名・ファイル名に章番号は付けない
+#     (番号を付けると章の途中挿入で全部リネームになり、URL も壊れるため)
+#   - 見出し (md 内の # / ## / ###) にも章番号は書かない
+#   - 章を途中に挿入するときは、下の nav に1行足すだけ。
+#     ファイルのリネームは一切不要で、既存ページの URL も変わらない
+# ============================================================
+
+# --- 文書メタデータ (PDF の表紙・MkDocs の site_name の唯一のソース) ---
+title: 在庫管理システム ソフトウェア仕様書
+subtitle: Version 1.0
+author: 株式会社サンプル 開発部
+date: 2026-07-18
+
+# --- 採番設定 ---
+numbering:
+  separator: "-"      # 番号の区切り。"-" → 3-1-1.  /  "." → 3.1.1.
+  suffix: "."         # 番号の末尾に付ける文字
+  heading_depth: 3    # md 内で採番する見出しの深さ (3 = H1..H3 まで)
+
+# --- 採番対象外のトップページ (docs/ からの相対パス) ---
+home: index.md
+
+# --- 生成ファイルのベース名 (dist/仕様書.md, output/仕様書.pdf …) ---
+output: 仕様書
+
+# --- wiki.js 連携 (tools/wikijs.py だけが読む。PDF / MkDocs には影響しない) ---
+wikijs:
+  # wiki.js 上のページパスの先頭に付ける階層。
+  #   screens/login.md → /docs/screens/login
+  # リバースプロキシで /docs 配下を wiki.js に転送する運用のために付ける。
+  # push (ページの作成先) と theme (採番スクリプトの引き当て先) の両方に効くので、
+  # ここを変えたら theme を実行し直して貼り直すこと。
+  path_prefix: docs
+  locale: ja
+
+# --- 構造 = 表示順 = 章番号 ---
+# 記法は MkDocs の nav と同じ。「セクション名: [ページ, ...]」のネストで、
+# 任意の深さまで入れ子にできる。パスは docs/ からの相対パス。
+# ページのタイトルは各 md の front matter の title (無ければ H1) から取るため、
+# ここには書かない (二重定義を避けるため)。
+nav:
+  - 概要:
+      - overview/overview.md
+  - システム構成:
+      - architecture/architecture.md
+  - 画面仕様:
+      - screens/login.md
+      - screens/stock_search.md
+      - screens/receiving.md
+      - screens/shipping.md
+  - API仕様:
+      - api/stocks.md
+      - api/receiving.md

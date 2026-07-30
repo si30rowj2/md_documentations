@@ -1,6 +1,10 @@
-# MkDocs で docs/*.md を静的サイト化するための依存
 # インストール:  pip install -r requirements.txt
+#
+# docs.yml のパースに使う。mkdocs の依存としても入るが、
+# 結合md / wiki.js 連携だけ使う場合のために明示しておく
+# (tools/wikijs.py の GraphQL 通信は標準ライブラリだけで動くので追加の依存は不要)
+PyYAML>=6.0
+# docs/ を静的サイト化する (mkdocs build / mkdocs serve)
+# ナビと採番は tools/mkdocs_hook.py が docs.yml から注入するのでプラグインは不要
 # pymdown-extensions は mkdocs-material の依存として自動で入る
 mkdocs-material>=9.5
-# 大分類フォルダのナビ名を .pages の title で付けるため
-mkdocs-awesome-pages-plugin>=2.9

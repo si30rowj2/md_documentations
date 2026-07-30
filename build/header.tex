@@ -1,27 +1,62 @@
+﻿% ============================================================
+% PDF (xelatex) 用プリアンブル
+% build/build.py が --include-in-header で読み込む。
+% ============================================================
+
 % 日本語の行内改行を有効化 (xeCJK 不要・XeTeX 標準機能)
 \XeTeXlinebreaklocale "ja"
 \XeTeXlinebreakskip=0pt plus 1pt minus 0.1pt
 
-% 大分類(H1=section)ごとに改ページ
 \usepackage{etoolbox}
-\pretocmd{\section}{\clearpage}{}{}
 
-% 採番形式を 1, 1-1, 1-1-1, 1-1-1-1 に (wiki.js / MkDocs 側の表示と統一)
-%  section        = 大分類            → 1
-%  subsection     = 画面(小分類)      → 1-1
-%  subsubsection  = 画面内 H2         → 1-1-1
-%  paragraph      = 画面内 H3         → 1-1-1-1
-\renewcommand{\thesubsection}{\thesection-\arabic{subsection}}
-\renewcommand{\thesubsubsection}{\thesubsection-\arabic{subsubsection}}
-\renewcommand{\theparagraph}{\thesubsubsection-\arabic{paragraph}}
+% --- 表紙: 1ページ目のみ・中央配置 ---
+% build/build.py が classoption=titlepage を渡すので \maketitle は
+% 縦横中央寄せの独立ページになる。article は表紙の直後にページ番号を
+% 1 に戻してしまうため、表紙を1ページ目として数え直す。
+\apptocmd{\maketitle}{\setcounter{page}{2}}{}{}
 
-% paragraph(H4)を既定の行内見出しからブロック見出しに変更
+% --- ページ番号を「現在ページ/総ページ数」に ---
+\usepackage{lastpage}
+\usepackage{fancyhdr}
+\newcommand{\pagexofy}{\thepage\,/\,\pageref{LastPage}}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyfoot[C]{\pagexofy}
+\renewcommand{\headrulewidth}{0pt}
+% plain スタイルのページ (目次の1ページ目など) にも同じフッタを出す
+\fancypagestyle{plain}{%
+  \fancyhf{}%
+  \fancyfoot[C]{\pagexofy}%
+  \renewcommand{\headrulewidth}{0pt}%
+}
+
+% 章番号は docs.yml から見出しテキストに焼き込み済みのため、
+% LaTeX 側の自動採番は使わない (pandoc の既定どおり無効のまま)。
+% paragraph(H4) だけは既定が行内見出しなのでブロック見出しに変更する。
 \usepackage{titlesec}
-\titleformat{\paragraph}[hang]{\normalfont\bfseries}{\theparagraph}{1em}{}
+\titleformat{\paragraph}[hang]{\normalfont\bfseries}{}{0pt}{}
 \titlespacing*{\paragraph}{0pt}{2.0ex plus 1ex minus .2ex}{1.0ex plus .2ex}
 
-% H4(paragraph)まで採番・目次掲載
-\setcounter{secnumdepth}{4}
+% --- 改ページ ---
+% 大分類(section = docs.yml のセクション)と
+% 中分類(subsection = md 1ファイル)の切れ目で必ず改ページし、
+% 章の途中から次の章が始まらないようにする。
+% 目次の直後も最初の大分類の \clearpage が効くので、目次は独立したページになる。
+%
+% 大分類の直後の中分類はこの \clearpage では分離されないため
+% (見出しの直後はまだ改ページ可能な位置になっていない)、
+% 「大分類見出しだけのほぼ空のページ」はできない。
+%
+% 注意: titlesec は読み込み時に \section 等を定義し直すので、
+% etoolbox の \pretocmd を titlesec より前に当てても無効化される。
+% ここは titlesec より後に置き、titlesec 自身の break フック
+% (見出しの直前に挿入される) を使うこと。
+\providecommand{\sectionbreak}{}
+\providecommand{\subsectionbreak}{}
+\renewcommand{\sectionbreak}{\clearpage}
+\renewcommand{\subsectionbreak}{\clearpage}
+
+% H4(paragraph)まで目次に掲載
 \setcounter{tocdepth}{4}
 
 % 目次タイトル
