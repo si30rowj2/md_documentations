@@ -8,7 +8,7 @@
 ```
 docs.yml  ← 唯一の定義ファイル (順序・構造・メタデータ・採番設定)
    │
-   ├─→ wiki.js .... tools/wikijs.py theme が採番スクリプトを生成 → 表示時に採番
+   ├─→ wiki.js .... tools/wikijs.py theme (表示時に採番) + push/nav (ページ・サイドバー)
    ├─→ MkDocs ..... tools/mkdocs_hook.py が nav と見出し番号を注入
    ├─→ 結合md ..... tools/render.py combine → dist/仕様書.md
    └─→ PDF/HTML ... build/build.py (結合md → pandoc)
@@ -45,9 +45,10 @@ numbering:
 home: index.md        # 採番対象外のトップページ
 output: 仕様書         # 生成ファイルのベース名 (dist/仕様書.md, output/仕様書.pdf …)
 
-wikijs:               # wiki.js 連携だけが読む (PDF / MkDocs には影響しない)
-  path_prefix: docs   # wiki.js 上のページパス → /docs/screens/login
+wikijs:                    # wiki.js 連携だけが読む (PDF / MkDocs には影響しない)
+  path_prefix: docs        # wiki.js 上のページパス → /docs/screens/login
   locale: ja
+  navigation_mode: STATIC  # サイドバーを nav の順序で組み立てる
 
 # 並び順 = 表示順 = 章番号。記法は MkDocs の nav と同じで、任意の深さに入れ子にできる
 nav:
@@ -113,7 +114,7 @@ docs/
 | `tools/doctree.py` | `docs.yml` のパースと採番。**採番ロジックはここだけ** |
 | `tools/render.py` | CLI: `check` / `combine` |
 | `tools/mkdocs_hook.py` | MkDocs に nav と見出し番号を注入するフック |
-| `tools/wikijs.py` | CLI: `theme`(採番スクリプト生成)/ `push`(wiki.js へ反映) |
+| `tools/wikijs.py` | CLI: `theme`(採番スクリプト生成)/ `push`(ページ反映)/ `nav`(サイドバー) |
 | `wikijs/head-injection.html` | 生成物。wiki.js の「HTMLヘッド注入」に貼る採番スクリプト |
 | `mkdocs.yml` / `requirements.txt` | MkDocs (Material) の見た目の設定・依存 |
 | `build/build.py` | PDF / HTML ビルド (pandoc)。`build.ps1` / `build.sh` はその薄いラッパー |
@@ -256,15 +257,17 @@ python tools\wikijs.py theme       # wikijs\head-injection.html を生成
 > `docs.yml` の `nav` を変更したら `theme` を実行し直して貼り直すこと(番号表を埋め込んでいるため)。
 > md 本文の編集だけなら貼り直しは不要。
 
-### 2. md を wiki.js に反映する
+### 2. md とサイドバーを wiki.js に反映する
 
 ```powershell
 $env:WIKIJS_URL   = "http://localhost:3000"
 $env:WIKIJS_TOKEN = "<管理画面 → API で発行したトークン>"
 
 python tools\wikijs.py push --dry-run   # 何が作成/更新されるかだけ表示
-python tools\wikijs.py push             # 反映
+python tools\wikijs.py push             # ページ + サイドバーを反映
 python tools\wikijs.py push --prune     # docs.yml から外れたページを wiki.js からも削除
+python tools\wikijs.py push --no-nav    # サイドバーは触らずページだけ反映
+python tools\wikijs.py nav              # サイドバーだけを docs.yml の順序に更新
 ```
 
 - `docs/screens/login.md` → `/docs/screens/login`。**パスに番号を含まないので、章を挿入しても URL は変わらない**
@@ -273,9 +276,52 @@ python tools\wikijs.py push --prune     # docs.yml から外れたページを w
 - `--prune` の対象は `path_prefix` 配下だけ。同じ wiki.js に載っている他のページは消さない
 
 Git 連携(管理画面 → ストレージ → Git)を使う場合も、リポジトリの `docs/` がそのまま
-`/docs/...` のページになるため、`push` と同じパスに揃う。
+`/docs/...` のページになるため、`push` と同じパスに揃う(サイドバーは `nav` で別途反映する)。
 
 動作確認用の wiki.js は `docker compose up -d` で起動できる(`docker-compose.yml`)。
+
+### サイドバーを docs.yml の順序・日本語セクション名にする
+
+wiki.js **組み込みのサイトツリーでは、docs.yml の順序も日本語のセクション名も表現できない**。
+wiki.js 2.x の実装がそうなっているため:
+
+| | 実装 | 結果 |
+|---|---|---|
+| 並び順 | `server/jobs/rebuild-tree.js` の `orderBy(['localeCode', 'path'])` | **パスのアルファベット順に固定**。`api` → `architecture` → `overview` → `screens` |
+| フォルダ名 | 同ファイルの `title: isFolder ? part : page.title` | **パスの断片そのまま**。`screens` は `screens` のまま(同じパスにページを置いても変わらない) |
+
+そこで `push` / `nav` は、docs.yml から**カスタムナビゲーション**を組み立てて
+GraphQL API (`navigation.updateTree`) で流し込む。これが順序と表示名を制御できる唯一の方法。
+
+```
+トップ                     ← home (index.md)
+────────
+[見出し] 3. 画面仕様        ← docs.yml のセクション名がそのまま日本語の見出しに
+  3-1. ログイン画面         ← docs.yml の nav の順序どおり
+  3-2. 在庫照会画面
+  3-3. 入庫登録画面
+  3-4. 出庫登録画面
+────────
+[見出し] 4. API仕様
+  4-1. 在庫照会API
+  4-2. 入庫登録API
+```
+
+- カスタムナビゲーションは**入れ子を持てない平坦なリスト**なので、セクションは
+  見出し(header)と区切り線(divider)で表現する。階層は番号で読み取れる
+- ラベルには番号を焼き込む(生成物なので md には影響しない)。採番スクリプト側は
+  すでに番号が入っている項目には**二重に付けない**
+- 表示モードは `docs.yml` の `wikijs.navigation_mode` で決まる
+
+| 値 | サイドバー |
+|---|---|
+| `STATIC`(既定) | カスタムナビゲーションのみ |
+| `MIXED` | カスタムナビゲーション + 組み込みサイトツリーの切替ボタン |
+| `TREE` | 組み込みサイトツリーのみ(**順序・日本語名は効かなくなる**) |
+| `NONE` | サイドバーなし |
+
+> `nav` はそのロケールのカスタムナビゲーションを**丸ごと置き換える**(他ロケールのものは残す)。
+> 管理画面で手作りしたリンクを併用している場合は `--no-nav` を使う。
 
 ### ページパスの先頭階層 (`/docs/...`)
 
@@ -286,10 +332,12 @@ Git 連携(管理画面 → ストレージ → Git)を使う場合も、リポ�
 wikijs:
   path_prefix: docs      # screens/login.md → /docs/screens/login
   locale: ja
+  navigation_mode: STATIC
 ```
 
-`push`(ページの作成先)と `theme`(採番スクリプトがページを引き当てる先)の**両方が
-この値を見る**ので、変更しても番号は必ず一致する。ただし `theme` の再実行と貼り直しが必要。
+`push`(ページの作成先)・`nav`(サイドバーのリンク先)・`theme`(採番スクリプトが
+ページを引き当てる先)の**すべてがこの値を見る**ので、変更しても食い違わない。
+ただし `theme` の再実行と貼り直しが必要。
 
 採番スクリプトは `/docs/screens/login` のほか、`/ja/docs/screens/login`(多言語構成)と
 `/screens/login`(プロキシがプレフィックスを落として wiki.js に渡す構成)でも引き当てられる。
@@ -298,13 +346,15 @@ wikijs:
 
 ### この方式の制約
 
-表示時採番のため、**番号が「文字として」入っていない場所には反映されない**。
+サイドバーの順序と表示名はカスタムナビゲーションで解決済み。残るのは、
+表示時採番のため **番号が md 本文に「文字として」入っていない**ことによる制約:
 
-- **サイドバーの並び順**は wiki.js 側の順序(パス/タイトル順)のまま。番号順にはならない
-- **検索結果**のタイトル・本文抜粋には番号が出ない
+- **検索結果**のタイトル・本文抜粋には番号が出ない(検索インデックスは md 本文から作られるため)
 - wiki.js の**ページエクスポート / 印刷**にも番号は含まれない(番号付きの配布物は PDF を使う)
+- `navigation_mode: TREE` にした場合は、組み込みサイトツリーの並び順・フォルダ名は
+  wiki.js 側の仕様どおり(パス順・英語のパス断片)になる
 
-番号順の並びや検索結果まで揃えたい場合は、番号を md に焼き込んで送る方式に切り替える必要がある。
+検索結果まで番号を揃えたい場合は、番号を md に焼き込んで送る方式に切り替える必要がある。
 
 ## 章を途中に挿入するとき
 

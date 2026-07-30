@@ -3,7 +3,8 @@
 #
 #   python tools/wikijs.py theme   … docs.yml から採番スクリプトを生成
 #                                     → wikijs/head-injection.html
-#   python tools/wikijs.py push    … docs/ の md を wiki.js に反映 (GraphQL API)
+#   python tools/wikijs.py push    … docs/ の md と サイドバーを wiki.js に反映
+#   python tools/wikijs.py nav     … サイドバーだけを docs.yml の順序に更新
 #
 # 方針:
 #   md には番号を焼き込まない。docs/ の md をそのまま wiki.js に載せ、
@@ -30,6 +31,7 @@ import os
 import sys
 import urllib.error
 import urllib.request
+import uuid
 from pathlib import Path
 
 import yaml
@@ -181,6 +183,10 @@ _TEMPLATE = """<!-- ============================================================
   function setNumber(el, text) {
     if (!el || el.getAttribute('data-doc-num') === text) return;
     var span = el.querySelector(':scope > span.doc-num');
+    if (!span && el.textContent.indexOf(text) === 0) {
+      el.setAttribute('data-doc-num', text);   // すでに番号入り (カスタムナビの項目名など)
+      return;
+    }
     if (!span) {
       span = document.createElement('span');
       span.className = 'doc-num';
@@ -351,6 +357,130 @@ mutation ($id: Int!) {
 """
 
 
+# ============================================================
+#  nav … サイドバーを docs.yml の並び順どおりに組み替える
+#
+#  wiki.js 組み込みのサイトツリーは
+#    - フォルダ名がパスの断片そのまま (screens は screens のまま)
+#    - 並び順がパスのアルファベット順で固定
+#  なので、docs.yml の順序も日本語のセクション名も表現できない。
+#  そのため「カスタムナビゲーション」を docs.yml から組み立てて流し込む。
+#  カスタムナビゲーションは入れ子を持てない平坦なリストなので、
+#  セクションは見出し (header) + 区切り (divider) で表現する。
+# ============================================================
+
+NAV_MODES = ("STATIC", "MIXED", "TREE", "NONE")
+DEFAULT_NAV_MODE = "STATIC"
+HOME_ICON = "mdi-home"
+PAGE_ICON = "mdi-file-document-outline"
+
+_NAV_QUERY = """
+query {
+  navigation {
+    tree {
+      locale
+      items { id kind label icon targetType target visibilityMode visibilityGroups }
+    }
+  }
+}
+"""
+
+_NAV_UPDATE_MUTATION = """
+mutation ($tree: [NavigationTreeInput]!) {
+  navigation {
+    updateTree(tree: $tree) { responseResult { succeeded errorCode message } }
+  }
+}
+"""
+
+_NAV_CONFIG_MUTATION = """
+mutation ($mode: NavigationMode!) {
+  navigation {
+    updateConfig(mode: $mode) { responseResult { succeeded errorCode message } }
+  }
+}
+"""
+
+
+def navigation_mode(section: dict, override: str | None = None) -> str:
+    value = str(override or section.get("navigation_mode") or DEFAULT_NAV_MODE).upper()
+    if value not in NAV_MODES:
+        raise DocError(f"navigation_mode は {' / '.join(NAV_MODES)} のいずれかです: {value}")
+    return value
+
+
+def navigation_items(doc: Doc, prefix: str, locale: str) -> list[dict]:
+    """docs.yml の nav 順に、wiki.js のカスタムナビゲーション項目を組み立てる。"""
+    def item(kind: str, **fields) -> dict:
+        return {"id": str(uuid.uuid4()), "kind": kind,
+                "visibilityMode": "all", "visibilityGroups": [], **fields}
+
+    def link(label: str, rel: Path, icon: str) -> dict:
+        # target はそのまま href になる。wiki.js は /<locale>/<path> 形式を常に解釈する
+        return item("link", label=label, icon=icon,
+                    targetType="page", target=f"/{locale}/{wiki_path(prefix, rel)}")
+
+    items: list[dict] = []
+    if doc.home:                                     # 採番対象外のトップページ
+        home = Path(doc.home)
+        items.append(link(doctree.page_title(doc.docs_dir / home, home), home, HOME_ICON))
+
+    def walk(nodes) -> None:
+        for node in nodes:
+            if node.kind == "section":
+                items.append(item("header", label=doc.numbered_title(node)))
+                walk(node.children)
+            else:
+                items.append(link(doc.numbered_title(node), node.path, PAGE_ICON))
+
+    for node in doc.tree:
+        if items:
+            items.append(item("divider"))            # セクションの区切り
+        walk([node])
+    return items
+
+
+def print_navigation(items: list[dict], mode: str, locale: str) -> None:
+    print(f"ナビゲーション ({mode} / {locale}):")
+    for entry in items:
+        if entry["kind"] == "header":
+            print(f"  [見出し] {entry['label']}")
+        elif entry["kind"] == "divider":
+            print("  --------")
+        else:
+            print(f"    {entry['label']}  →  {entry['target']}")
+
+
+def sync_navigation(doc: Doc, url: str, token: str, prefix: str, locale: str,
+                    mode: str, dry_run: bool) -> None:
+    items = navigation_items(doc, prefix, locale)
+    print_navigation(items, mode, locale)
+    if dry_run:
+        return
+
+    # 他ロケールのナビゲーションは触らずに残す (updateTree は全体を置き換えるため)
+    others = [tree for tree in graphql(url, token, _NAV_QUERY)["navigation"]["tree"]
+              if tree["locale"] != locale]
+    payload = others + [{"locale": locale, "items": items}]
+
+    check_result(graphql(url, token, _NAV_UPDATE_MUTATION, {"tree": payload}),
+                 "ナビゲーションの更新")
+    check_result(graphql(url, token, _NAV_CONFIG_MUTATION, {"mode": mode}),
+                 f"ナビゲーションモードの変更 ({mode})")
+    print(f"OK: サイドバーを docs.yml の順序に更新しました ({len(items)} 項目)")
+
+
+def cmd_nav(doc: Doc, args) -> int:
+    url, token = endpoint(args)
+    section = settings(doc)
+    sync_navigation(doc, url, token,
+                    path_prefix(section, args.prefix),
+                    args.locale or str(section.get("locale") or DEFAULT_LOCALE),
+                    navigation_mode(section, args.mode),
+                    args.dry_run)
+    return 0
+
+
 def graphql(url: str, token: str, query: str, variables: dict | None = None) -> dict:
     request = urllib.request.Request(
         url.rstrip("/") + "/graphql",
@@ -374,9 +504,12 @@ def graphql(url: str, token: str, query: str, variables: dict | None = None) -> 
 
 
 def check_result(result: dict, what: str) -> None:
-    """mutation の responseResult を見て、失敗なら DocError にする。"""
-    inner = next(iter(result["pages"].values()))
-    status = inner["responseResult"]
+    """mutation の responseResult を見て、失敗なら DocError にする。
+
+    data の形は { pages: { create: { responseResult } } } のように
+    「グループ名 → 操作名」の 2 段なので、名前を問わず辿る。
+    """
+    status = next(iter(next(iter(result.values())).values()))["responseResult"]
     if not status["succeeded"]:
         raise DocError(f"{what} に失敗しました: {status.get('message') or status.get('errorCode')}")
 
@@ -410,12 +543,17 @@ def source_pages(doc: Doc, prefix: str = "") -> list[tuple[str, str, str, str]]:
     return entries
 
 
-def cmd_push(doc: Doc, args) -> int:
+def endpoint(args) -> tuple[str, str]:
     url = args.url or os.environ.get("WIKIJS_URL")
     token = args.token or os.environ.get("WIKIJS_TOKEN")
     if not url or not token:
         raise DocError("wiki.js の URL と API トークンが必要です "
                        "(--url / --token、または環境変数 WIKIJS_URL / WIKIJS_TOKEN)")
+    return url, token
+
+
+def cmd_push(doc: Doc, args) -> int:
+    url, token = endpoint(args)
 
     problems = doc.check()
     if problems:
@@ -464,6 +602,10 @@ def cmd_push(doc: Doc, args) -> int:
 
     print(f"OK: {len(pushed)} ページを {url} に反映しました"
           + (" (--dry-run のため送信はしていません)" if args.dry_run else ""))
+
+    if not args.no_nav:
+        sync_navigation(doc, url, token, prefix, locale,
+                        navigation_mode(section, args.mode), args.dry_run)
     return 0
 
 
@@ -477,17 +619,27 @@ def main(argv: list[str] | None = None) -> int:
     theme.add_argument("--out", help=f"出力先 (既定: {DEFAULT_THEME_OUT})")
     theme.add_argument("--prefix", help="ページパスの先頭階層 (既定: docs.yml の wikijs.path_prefix)")
 
-    push = sub.add_parser("push", help="docs/ の md を wiki.js に反映する")
-    push.add_argument("--url", help="wiki.js の URL (既定: 環境変数 WIKIJS_URL)")
-    push.add_argument("--token", help="API トークン (既定: 環境変数 WIKIJS_TOKEN)")
-    push.add_argument("--prefix", help="ページパスの先頭階層 (既定: docs.yml の wikijs.path_prefix)")
-    push.add_argument("--locale", help=f"ロケール (既定: docs.yml の wikijs.locale / {DEFAULT_LOCALE})")
+    def add_target_options(p) -> None:
+        p.add_argument("--url", help="wiki.js の URL (既定: 環境変数 WIKIJS_URL)")
+        p.add_argument("--token", help="API トークン (既定: 環境変数 WIKIJS_TOKEN)")
+        p.add_argument("--prefix", help="ページパスの先頭階層 (既定: docs.yml の wikijs.path_prefix)")
+        p.add_argument("--locale", help=f"ロケール (既定: docs.yml の wikijs.locale / {DEFAULT_LOCALE})")
+        p.add_argument("--mode", choices=NAV_MODES,
+                       help=f"ナビゲーションモード (既定: docs.yml の wikijs.navigation_mode / {DEFAULT_NAV_MODE})")
+        p.add_argument("--dry-run", action="store_true", help="送信せず、何をするかだけ表示する")
+
+    push = sub.add_parser("push", help="docs/ の md と サイドバーを wiki.js に反映する")
+    add_target_options(push)
     push.add_argument("--prune", action="store_true",
                       help="docs.yml から外れたページを wiki.js からも削除する")
-    push.add_argument("--dry-run", action="store_true", help="送信せず、何をするかだけ表示する")
+    push.add_argument("--no-nav", action="store_true",
+                      help="サイドバー (カスタムナビゲーション) を更新しない")
+
+    nav = sub.add_parser("nav", help="サイドバーだけを docs.yml の順序に更新する")
+    add_target_options(nav)
 
     args = parser.parse_args(argv)
-    handlers = {"theme": cmd_theme, "push": cmd_push}
+    handlers = {"theme": cmd_theme, "push": cmd_push, "nav": cmd_nav}
 
     try:
         doc = doctree.load()

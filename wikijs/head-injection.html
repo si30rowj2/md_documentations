@@ -79,6 +79,10 @@
   function setNumber(el, text) {
     if (!el || el.getAttribute('data-doc-num') === text) return;
     var span = el.querySelector(':scope > span.doc-num');
+    if (!span && el.textContent.indexOf(text) === 0) {
+      el.setAttribute('data-doc-num', text);   // すでに番号入り (カスタムナビの項目名など)
+      return;
+    }
     if (!span) {
       span = document.createElement('span');
       span.className = 'doc-num';
